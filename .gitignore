@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+.pytest_cache/
+# NOTE: data/monitor.db and site/data/ ARE committed on purpose — the GitHub
+# Action persists monitoring state and the published dashboard through git.

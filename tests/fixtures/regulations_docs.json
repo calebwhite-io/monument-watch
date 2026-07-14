@@ -1,0 +1,641 @@
+{
+  "data" : [ {
+    "type" : "documents",
+    "id" : "FS_FRDOC_0001-4066",
+    "attributes" : {
+      "agencyId" : "FS",
+      "objectId" : "09000064868c9fed",
+      "frDocNum" : "2025-00863",
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2025-01-16T05:00:00Z",
+      "lastModifiedDate" : "2025-01-17T02:33:24Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2025-01-16T05:00:00Z",
+      "title" : "Record of Decision: Resource Management Plan for Bears Ears National Monument and Amendment to the Manti-La Sal National Forest Land and Resource Management Plan in Utah; Approvals",
+      "docketId" : "FS_FRDOC_0001",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-R09-OAR-2024-0555-0001",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006486819cbb",
+      "frDocNum" : null,
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2024-11-15T05:00:00Z",
+      "lastModifiedDate" : "2024-11-16T02:35:09Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-11-15T05:00:00Z",
+      "title" : "Receipt of Request for Coverage Under a General Air Quality Permit - San Juan Lateral WTP Rock Crusher",
+      "docketId" : "EPA-R09-OAR-2024-0555",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2023-0231-0928",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064867df678",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-11-13T02:00:40Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-11-12T05:00:00Z",
+      "title" : "Part 1: Excel Files Used in Preparing the Economic Analysis of the Dust-Lead Final Rule",
+      "docketId" : "EPA-HQ-OPPT-2023-0231",
+      "subtype" : "Data",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OAR-2022-0606-0163",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006486613cee",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-10-12T00:37:48Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-10-11T04:00:00Z",
+      "title" : "Documents and Materials Referenced in the Preamble: Folder Two",
+      "docketId" : "EPA-HQ-OAR-2022-0606",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA_FRDOC_0001-31229",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064867abb85",
+      "frDocNum" : "2024-22955",
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2024-10-04T04:00:00Z",
+      "lastModifiedDate" : "2024-10-04T11:53:36Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-10-04T04:00:00Z",
+      "title" : "Environmental Impact Statements; Availability, etc.",
+      "docketId" : "EPA_FRDOC_0001",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "FS_FRDOC_0001-4030",
+    "attributes" : {
+      "agencyId" : "FS",
+      "objectId" : "09000064867abb3b",
+      "frDocNum" : "2024-22760",
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2024-10-04T04:00:00Z",
+      "lastModifiedDate" : "2024-10-04T11:53:14Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-10-04T04:00:00Z",
+      "title" : "Environmental Impact Statements; Availability, etc.: Bears Ears National Monument in Utah, Proposed Resource Management Plan",
+      "docketId" : "FS_FRDOC_0001",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-R08-OAR-2024-0389-0064",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006486651929",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-08-20T01:00:50Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-08-19T04:00:00Z",
+      "title" : "Supporting Documents - UT Public Comments - Cover Sheet",
+      "docketId" : "EPA-R08-OAR-2024-0389",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2020-0471-0048",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064863d422f",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-08-09T00:44:11Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-08-08T04:00:00Z",
+      "title" : "Executive Order 13990. Protecting Public Health and the Environment and Restoring Science to Tackle the Climate Crisis. Federal Register (86 FR 7037, January 25, 2021)",
+      "docketId" : "EPA-HQ-OPPT-2020-0471",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2020-0744-0051",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "090000648631962a",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-06-15T01:15:17Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-06-14T04:00:00Z",
+      "title" : "Executive Order 13990. Protecting Public Health and the Environment and Restoring Science to Tackle the Climate 86 FR 7037Crisis. Federal Register (86 FR 7037, January 25, 2021)",
+      "docketId" : "EPA-HQ-OPPT-2020-0744",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OW-2022-0260-0156",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006486566d8c",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-05-25T00:39:40Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-05-24T04:00:00Z",
+      "title" : "Executive Order 13990",
+      "docketId" : "EPA-HQ-OW-2022-0260",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2023-0496-0419",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064864e2305",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-05-04T00:49:46Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-05-03T04:00:00Z",
+      "title" : "Guidance for Federal Departments and Agencies on Indigenous Knowledge",
+      "docketId" : "EPA-HQ-OPPT-2023-0496",
+      "subtype" : "Memorandum",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OW-2021-0791-0354",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064864edc9c",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-05-03T00:58:25Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-05-02T04:00:00Z",
+      "title" : "Best Practices Guide for Federal Agencies Regarding Tribal and Native Hawaiian Sacred Sites (2023)",
+      "docketId" : "EPA-HQ-OW-2021-0791",
+      "subtype" : "Report",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OAR-2022-0829-5541",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "090000648647fc9d",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-04-19T01:18:39Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-04-18T04:00:00Z",
+      "title" : "Investing In America The White House invest.gov",
+      "docketId" : "EPA-HQ-OAR-2022-0829",
+      "subtype" : "Press Release, Public Announcement/Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OAR-2022-0829-5474",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "090000648647e451",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-04-19T01:16:35Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-04-18T04:00:00Z",
+      "title" : "Investing in America Invest.gov",
+      "docketId" : "EPA-HQ-OAR-2022-0829",
+      "subtype" : "Data",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "FS_FRDOC_0001-3933",
+    "attributes" : {
+      "agencyId" : "FS",
+      "objectId" : "0900006486478276",
+      "frDocNum" : "2024-05203",
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2024-03-13T04:00:00Z",
+      "lastModifiedDate" : "2024-03-13T12:17:24Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-03-13T04:00:00Z",
+      "title" : "Environmental Impact Statements; Availability, etc.: Bears Ears National Monument in Utah, Draft Resource Management Plan",
+      "docketId" : "FS_FRDOC_0001",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA_FRDOC_0001-30557",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "090000648646b25b",
+      "frDocNum" : "2024-04957",
+      "documentType" : "Notice",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : "2024-03-08T05:00:00Z",
+      "lastModifiedDate" : "2024-03-08T18:04:20Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-03-08T05:00:00Z",
+      "title" : "Environmental Impact Statements; Availability, etc.",
+      "docketId" : "EPA_FRDOC_0001",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OW-2023-0475-0067",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064863f5f9e",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-02-21T01:51:35Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-02-20T05:00:00Z",
+      "title" : "Executive Order 13990 on Protecting Public Health and the Environment and Restoring Science to Tackle the Climate Crisis",
+      "docketId" : "EPA-HQ-OW-2023-0475",
+      "subtype" : "Press Release, Public Announcement/Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EERE-2009-BT-BC-0021-2587",
+    "attributes" : {
+      "agencyId" : "EERE",
+      "objectId" : "0900006485e60748",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2024-01-03T14:50:59Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2024-01-03T05:00:00Z",
+      "title" : "2021-01-25 Protecting Public Health and the Environment and Restoring Science to Tackle the Climate Crisis (Federal Register Notice Presidential Documents  Executive Order 13990 of January 20, 2021, FR citation: 88FR7037, FR Doc. 2021-01765) (Interagency Working Group release attached)",
+      "docketId" : "EERE-2009-BT-BC-0021",
+      "subtype" : "Agency References",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OW-2022-0801-0225",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006485ff0c06",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-12-07T03:51:52Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-12-06T05:00:00Z",
+      "title" : "EO 13990 (2021) Executive Order on Protecting Public Health and the Environment and Restoring Science to Tackle the Climate Crisis, Executive Order",
+      "docketId" : "EPA-HQ-OW-2022-0801",
+      "subtype" : "Publication - Other Governmental",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OW-2022-0128-0585",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "090000648627007c",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-12-07T02:23:36Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-12-06T05:00:00Z",
+      "title" : "Executive Order 13990",
+      "docketId" : "EPA-HQ-OW-2022-0128",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2023-0376-0216",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006485fe2f51",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-11-25T01:36:24Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-11-24T05:00:00Z",
+      "title" : "Executive Order 13990: Protecting Public Health and the Environment and Restoring Science To Tackle the Climate Crisis",
+      "docketId" : "EPA-HQ-OPPT-2023-0376",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2020-0642-0063",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006485cff5a2",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-11-01T01:37:21Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-10-31T04:00:00Z",
+      "title" : "Executive Order 13990",
+      "docketId" : "EPA-HQ-OPPT-2020-0642",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OPPT-2023-0496-0002",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "09000064860fa472",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-10-31T01:04:24Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-10-30T04:00:00Z",
+      "title" : "3. Executive Order 13990",
+      "docketId" : "EPA-HQ-OPPT-2023-0496",
+      "subtype" : "Publication - Previous/Related FR Notice",
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "EPA-HQ-OAR-2022-0606-0015",
+    "attributes" : {
+      "agencyId" : "EPA",
+      "objectId" : "0900006485db8d35",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-10-20T00:36:06Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-10-19T04:00:00Z",
+      "title" : "Documents and Materials Referenced in Preamble",
+      "docketId" : "EPA-HQ-OAR-2022-0606",
+      "subtype" : null,
+      "allowLateComments" : false
+    }
+  }, {
+    "type" : "documents",
+    "id" : "NHTSA-2023-0022-0018",
+    "attributes" : {
+      "agencyId" : "NHTSA",
+      "objectId" : "0900006485e36c51",
+      "frDocNum" : null,
+      "documentType" : "Supporting & Related Material",
+      "withdrawn" : false,
+      "highlightedContent" : "",
+      "commentEndDate" : null,
+      "commentStartDate" : null,
+      "lastModifiedDate" : "2023-08-17T18:50:29Z",
+      "openForComment" : false,
+      "withinCommentPeriod" : false,
+      "postedDate" : "2023-08-17T04:00:00Z",
+      "title" : "Prior Rulemaking Documents",
+      "docketId" : "NHTSA-2023-0022",
+      "subtype" : "Supplement",
+      "allowLateComments" : false
+    }
+  } ],
+  "meta" : {
+    "aggregations" : {
+      "documentType" : [ {
+        "docCount" : 46,
+        "label" : "Supporting & Related Material"
+      }, {
+        "docCount" : 14,
+        "label" : "Notice"
+      }, {
+        "docCount" : 8,
+        "label" : "Other"
+      } ],
+      "subtype" : [ {
+        "docCount" : 15,
+        "label" : "Publication - Previous/Related FR Notice"
+      }, {
+        "docCount" : 6,
+        "label" : "Environmental assessment"
+      }, {
+        "docCount" : 4,
+        "label" : "Order"
+      }, {
+        "docCount" : 4,
+        "label" : "Supplement"
+      }, {
+        "docCount" : 3,
+        "label" : "General Notice"
+      }, {
+        "docCount" : 3,
+        "label" : "Report"
+      }, {
+        "docCount" : 2,
+        "label" : "Data"
+      }, {
+        "docCount" : 2,
+        "label" : "Memorandum"
+      }, {
+        "docCount" : 2,
+        "label" : "Press Release, Public Announcement/Notice"
+      }, {
+        "docCount" : 1,
+        "label" : "Agency References"
+      }, {
+        "docCount" : 1,
+        "label" : "Application"
+      }, {
+        "docCount" : 1,
+        "label" : "Other"
+      }, {
+        "docCount" : 1,
+        "label" : "Public Hearing Transcript, Deposition, Testimony"
+      }, {
+        "docCount" : 1,
+        "label" : "Publication - Other Governmental"
+      }, {
+        "docCount" : 1,
+        "label" : "Publication - USEPA"
+      }, {
+        "docCount" : 1,
+        "label" : "Study"
+      }, {
+        "docCount" : 1,
+        "label" : "Supplemental Comment"
+      } ],
+      "withinCommentPeriod" : [ {
+        "docCount" : 0,
+        "label" : "true"
+      }, {
+        "docCount" : 68,
+        "label" : "false"
+      } ],
+      "agencyId" : [ {
+        "docCount" : 42,
+        "value" : "EPA"
+      }, {
+        "docCount" : 8,
+        "value" : "FS"
+      }, {
+        "docCount" : 6,
+        "value" : "APHIS"
+      }, {
+        "docCount" : 6,
+        "value" : "NHTSA"
+      }, {
+        "docCount" : 2,
+        "value" : "DOI"
+      }, {
+        "docCount" : 1,
+        "value" : "DOE"
+      }, {
+        "docCount" : 1,
+        "value" : "EERE"
+      }, {
+        "docCount" : 1,
+        "value" : "FWS"
+      }, {
+        "docCount" : 1,
+        "value" : "PHMSA"
+      } ],
+      "commentEndDate" : [ ],
+      "postedDate" : [ ]
+    },
+    "filters" : { },
+    "hasNextPage" : true,
+    "hasPreviousPage" : false,
+    "numberOfElements" : 25,
+    "pageNumber" : 1,
+    "pageSize" : 25,
+    "totalElements" : 68,
+    "totalPages" : 3,
+    "lastPage" : false,
+    "firstPage" : true
+  }
+}

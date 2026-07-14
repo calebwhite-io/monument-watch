@@ -1,0 +1,173 @@
+# Monument Watch configuration.
+# Everything the monitor watches for is defined here — edit keywords, counties,
+# and feeds freely; no code changes needed. Lines starting with # are comments.
+
+# Identifies this tool to the websites it polls. CONTACT_EMAIL from .env is
+# substituted in so agencies can reach you instead of blocking you.
+user_agent: "MonumentWatch/1.0 (public-lands monitoring dashboard; contact: {contact_email})"
+
+watch:
+  # Tags applied to items whose text mentions each monument.
+  monuments:
+    bears-ears: ["Bears Ears", "Cedar Mesa", "Indian Creek", "White Canyon", "Comb Ridge", "Valley of the Gods"]
+    grand-staircase: ["Grand Staircase", "Escalante", "Kaiparowits", "Paria"]
+  # Utah counties covering both monuments. Used by county-filtered sources.
+  counties: ["San Juan", "Kane", "Garfield"]
+  # Generic keywords searched across text sources.
+  keywords:
+    - "Bears Ears"
+    - "Grand Staircase-Escalante"
+    - "Kaiparowits"
+
+boundaries:
+  # ArcGIS layer holding National Monument polygons. As of build time
+  # (2026-07-13) this still serves the pre-reduction (2021) boundaries,
+  # which is exactly the watch area.
+  layer_query_url: "https://gis.blm.gov/arcgis/rest/services/lands/BLM_Natl_NLCS_NM_NCA_poly/MapServer/0/query"
+  monument_names: ["Bears Ears", "Grand Staircase-Escalante"]
+  # Cached copy of the watch-area polygons (auto-downloaded on first run).
+  cache_file: "data/geo/boundaries_2021.geojson"
+  # When BLM publishes the post-proclamation (reduced) boundaries, save them
+  # as this file and flip `reduced_published` to true. No code change needed.
+  reduced_file: "data/geo/boundaries_reduced.geojson"
+  reduced_published: false
+
+sources:
+  federal_register:
+    enabled: true
+    # Each term is searched as an exact phrase.
+    terms: ["Bears Ears", "Grand Staircase-Escalante", "Kaiparowits"]
+    # Searched restricted to BLM/Interior documents; matches get category `policy`.
+    policy_terms: ["wilderness study area Utah", "mineral withdrawal Utah"]
+    lookback_days: 365
+
+  mining_claims:
+    enabled: true
+    # BLM MLRS national layers (verified live 2026-07-13). Claims/leases are
+    # fetched by bounding box then precisely filtered against the watch-area
+    # polygons locally.
+    claims_layer: "https://gis.blm.gov/nlsdb/rest/services/HUB/BLM_Natl_MLRS_Mining_Claims_Not_Closed/FeatureServer/0/query"
+    leases_layer: "https://gis.blm.gov/nlsdb/rest/services/HUB/BLM_Natl_MLRS_Oil_and_Gas_Leases/FeatureServer/0/query"
+
+  courtlistener:
+    enabled: true
+    api_key_env: COURTLISTENER_API_TOKEN   # optional; works keyless at lower volume
+    terms: ["Bears Ears", "Grand Staircase-Escalante"]
+    # Add docket IDs here as monument lawsuits are filed, e.g. [65364011].
+    # Find the ID in the courtlistener.com docket URL.
+    dockets: []
+
+  congress:
+    enabled: true
+    api_key_env: CONGRESS_API_KEY
+    terms:
+      - "Bears Ears"
+      - "Grand Staircase"
+      - "Antiquities Act"
+      - "land exchange Utah"
+      - "land conveyance Utah"
+    lookback_days: 365
+
+  regulations_gov:
+    enabled: true
+    api_key_env: REGS_API_KEY
+    terms: ["Bears Ears", "Grand Staircase-Escalante"]
+    agencies: ["DOI", "BLM"]
+    lookback_days: 365
+
+  news:
+    enabled: true
+    google_news_queries:
+      - '"Bears Ears" monument'
+      - '"Grand Staircase" monument'
+      - 'Kaiparowits coal OR mining'
+    # Org feeds verified working at build time (2026-07-13).
+    org_feeds:
+      - "https://suwa.org/feed/"
+      - "https://www.grandcanyontrust.org/feed/"
+      - "https://bearsearscoalition.org/feed/"
+      # unreachable at build time (connection failed 2026-07-13); re-enable to retry:
+      # - "https://grandstaircasepartners.org/feed/"
+    # Only keep org-feed posts mentioning a watch keyword; Google News queries
+    # are already scoped so all their results are kept.
+    max_age_days: 90
+
+  eplanning:
+    enabled: true
+    # BLM National NEPA Register (the ePlanning replacement, verified 2026-07-13).
+    # JSON backend: POST /searchresults/ with DataTables-style params.
+    search_url: "https://eplanning.blm.gov/searchresults/"
+    project_url_base: "https://eplanning.blm.gov/Project-Home?id="
+    state: "Utah"
+    # Office values exactly as the register's dropdown defines them.
+    # (No separate Bears Ears NMON or Paria River District office exists in the
+    # register — Monticello FO and Kanab FO administer those lands.)
+    offices:
+      - "Monticello FO"
+      - "Kanab FO"
+      - "Grand Staircase-Escalante NMON"
+
+  lease_sales:
+    enabled: true
+    # BLM Utah quarterly lease-sale page (server-rendered; verified 2026-07-13).
+    # NFLSS (nflss.blm.gov) itself is a Salesforce Lightning SPA with no
+    # anonymous JSON API discoverable without a browser session, so it is a
+    # manual check instead — its sale data is mirrored on this page and in
+    # ePlanning anyway.
+    page_url: "https://www.blm.gov/programs/energy-and-minerals/oil-and-gas/leasing/regional-lease-sales/utah"
+
+  blm_policy:
+    enabled: true
+    # IM index (found 2026-07-13 at this URL; the previously documented
+    # /policy/instruction-memorandums 404s). Server-rendered listing.
+    index_url: "https://www.blm.gov/policy/instruction-memorandum"
+    # index pages to scan. Page 1 (?page=1) reliably times out on blm.gov
+    # (2026-07-13); new IMs always appear on page 0, which is all a
+    # change-detector needs.
+    pages: 1
+    keywords: ["monument", "wilderness study", "land use plan", "withdrawal",
+               "utah", "leasing", "mineral", "mining", "oil and gas", "coal",
+               "antiquities", "grazing"]
+
+  utah_dogm:
+    enabled: true
+    # Utah Division of Oil, Gas and Mining daily machine-readable well dump
+    # (verified 2026-07-13; ~2 MB zip of Wells.csv, statewide).
+    wells_url: "https://oilgas.ogm.utah.gov/pub/Database/Wells.zip"
+    counties: ["SAN JUAN", "KANE", "GARFIELD"]
+
+  sitla:
+    enabled: true
+    # Utah Trust Lands Administration — WordPress REST API (verified
+    # 2026-07-13). Site 403s non-browser User-Agents and asks for a 10 s
+    # crawl delay; the client honors both. Only source where land can
+    # actually change ownership: watch-county posts are tagged priority.
+    api_url: "https://trustlands.utah.gov/wp-json/wp/v2/posts"
+    search_terms: ["auction", "land sale", "land exchange", "board of trustees"]
+
+site:
+  # The activity feed shows items dated (or first seen) within this window.
+  feed_days: 90
+  # Hard cap on feed length so the page stays fast.
+  max_feed_items: 1500
+  # A source whose last success is older than this many days shows yellow
+  # (stale) in the health panel even if its last attempt didn't error.
+  stale_after_days: 3
+
+# Tier 3: rendered as the dashboard's "manual checks" panel — no adapters.
+manual_checks:
+  - name: "San Juan County Recorder"
+    url: "https://sanjuancountyut.gov/191/Recorder"
+    what_to_check: "New mining-claim location notices and land transactions recorded for southeast Utah (Bears Ears side)."
+  - name: "Kane County Recorder"
+    url: "https://kane.utah.gov/gvt/dept/recorder/"
+    what_to_check: "Recorded claims/deeds in the Grand Staircase area; the federal MLRS layer usually shows the same claims first."
+  - name: "Garfield County Recorder"
+    url: "https://garfield.utah.gov/government/recorder"
+    what_to_check: "Recorded documents for the Escalante/Boulder area parcels."
+  - name: "National Fluid Lease Sale System (NFLSS)"
+    url: "https://nflss.blm.gov/"
+    what_to_check: "Upcoming fluid-mineral lease sales and parcel maps. (Interactive app — the lease_sales source watches the BLM Utah page that mirrors these documents.)"
+  - name: "SITLA board agendas"
+    url: "https://trustlands.utah.gov/who-we-are/board-of-trustees/"
+    what_to_check: "Board agenda items proposing sales/exchanges of trust sections inside the old monument boundaries."

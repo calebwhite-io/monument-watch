@@ -1,0 +1,96 @@
+# Monument Watch — scheduled monitoring run.
+#
+# One-time setup after pushing this repo to GitHub:
+#   1. Settings -> Pages -> Source: "GitHub Actions"
+#   2. Settings -> Secrets and variables -> Actions -> add:
+#        CONGRESS_API_KEY, REGS_API_KEY   (free keys — see README)
+#        CONTACT_EMAIL                    (identifies your scraper politely)
+#        COURTLISTENER_API_TOKEN          (optional)
+#   3. Actions tab -> enable workflows -> run "Monument Watch monitor" once
+#      manually to verify, then the cron takes over.
+
+name: Monument Watch monitor
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"   # every 6 hours; odd minute avoids top-of-hour load
+  workflow_dispatch: {}       # allows manual runs from the Actions tab
+
+permissions:
+  contents: write   # committing updated data/ and site/
+  pages: write      # publishing the dashboard
+  id-token: write   # required by deploy-pages
+
+concurrency:
+  group: monitor    # two overlapping runs would race on the database
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    outputs:
+      new_items: ${{ steps.run.outputs.new_items }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Run all source adapters
+        id: run
+        env:
+          CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
+          REGS_API_KEY: ${{ secrets.REGS_API_KEY }}
+          COURTLISTENER_API_TOKEN: ${{ secrets.COURTLISTENER_API_TOKEN }}
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
+        run: |
+          python run.py | tee run_summary.txt
+          NEW=$(grep -oP 'total new items: \K[0-9]+' run_summary.txt || echo 0)
+          echo "new_items=$NEW" >> "$GITHUB_OUTPUT"
+
+      - name: Commit updated monitoring state and site data
+        run: |
+          git config user.name "monument-watch-bot"
+          git config user.email "monument-watch-bot@users.noreply.github.com"
+          git add data/ site/data/
+          git diff --cached --quiet || git commit -m "monitor run: ${{ steps.run.outputs.new_items }} new items"
+          git push
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      # ── Optional: email notification when new items appear ──────────────
+      # Uncomment this step and add four more secrets to get an email digest.
+      # Works with any SMTP provider (Gmail: use an "app password").
+      #   MAIL_SERVER   e.g. smtp.gmail.com
+      #   MAIL_USERNAME your address
+      #   MAIL_PASSWORD app password
+      #   MAIL_TO       where to send alerts
+      #
+      # - name: Email notification of new items
+      #   if: steps.run.outputs.new_items != '0'
+      #   uses: dawidd6/action-send-mail@v3
+      #   with:
+      #     server_address: ${{ secrets.MAIL_SERVER }}
+      #     server_port: 465
+      #     username: ${{ secrets.MAIL_USERNAME }}
+      #     password: ${{ secrets.MAIL_PASSWORD }}
+      #     subject: "Monument Watch: ${{ steps.run.outputs.new_items }} new items"
+      #     to: ${{ secrets.MAIL_TO }}
+      #     from: Monument Watch
+      #     body: file://run_summary.txt
+
+  publish:
+    needs: monitor
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,6 @@
+requests==2.33.1
+feedparser==6.0.12
+beautifulsoup4==4.15.0
+PyYAML==6.0.3
+shapely==2.1.2
+pytest==9.0.3
