@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import logging
 import os
+import re
 import sys
 import traceback
 from pathlib import Path
@@ -48,39 +49,47 @@ def load_config() -> dict:
     return config
 
 
+def redact_secrets(text: str) -> str:
+    """API keys travel as URL params, and requests puts the full URL in its
+    error messages — which end up on the public dashboard and in git. Scrub
+    anything key-shaped before recording."""
+    return re.sub(r"(api[_-]?key|token|password)=[^&\s'\"]+", r"\1=REDACTED",
+                  text, flags=re.IGNORECASE)
+
+
 def run_source(name: str, module, ctx: RunContext, db: Database) -> dict:
-    """Run one adapter. Any exception is caught, logged, and recorded as a
-    health failure — one broken source must never take down the run."""
+    """Run one adapter end-to-end (fetch AND store). Any exception is caught,
+    logged, and recorded as a health failure — one broken source must never
+    take down the run, whether it dies fetching or persisting."""
     zero_ok = getattr(module, "ZERO_ITEMS_OK", True)
-    # Whether a baseline exists BEFORE this run — on the very first fetch of a
-    # source everything is "new", which shouldn't trigger priority alarms.
-    baseline = db.source_has_items(name)
+    # Whether this source has completed a fetch before. On the very first
+    # fetch everything is "new", which shouldn't trigger priority alarms.
+    baseline = db.baseline_established(name)
     try:
         items = module.fetch(ctx)
+        if not items and not zero_ok:
+            raise EmptyPayload("0 items — possible format change")
+        new_ids = db.upsert_items(items, baseline_run=not baseline)
+        # e.g. a mining-claim case number never seen before is the core
+        # signal — tag it priority, but only once a baseline exists.
+        if new_ids and baseline and getattr(module, "PRIORITY_ON_NEW", False):
+            db.add_tag(new_ids, "priority")
+        db.record_run(name, ok=True, item_count=len(items), new_count=len(new_ids))
+        return {"status": "ok", "items": len(items), "new": new_ids}
     except SkipSource as skip:
-        db.record_run(name, ok=True, note=skip.note)
+        db.record_run(name, ok=True, skipped=True, note=skip.note)
         return {"status": "skipped", "note": skip.note}
     except EmptyPayload as ep:
-        db.record_run(name, ok=False, error=str(ep) or "empty payload — possible format change")
-        return {"status": "failed", "error": str(ep)}
+        msg = str(ep) or "empty payload — possible format change"
+        db.record_run(name, ok=False, error=msg,
+                      note="0 items — possible format change; prior data kept")
+        return {"status": "failed", "error": msg}
     except Exception as exc:
         log.error("source %s failed: %s", name, exc)
         log.debug("%s", traceback.format_exc())
-        db.record_run(name, ok=False, error=f"{type(exc).__name__}: {exc}"[:500])
-        return {"status": "failed", "error": str(exc)}
-
-    if not items and not zero_ok:
-        db.record_run(name, ok=False, error="0 items — possible format change",
-                      note="0 items from a source that always has data; prior data kept")
-        return {"status": "failed", "error": "0 items — possible format change"}
-
-    new_ids = db.upsert_items(items, baseline_run=not baseline)
-    # e.g. a mining-claim case number never seen before is the core signal —
-    # tag it priority, but only once a baseline exists (not on first fetch).
-    if new_ids and baseline and getattr(module, "PRIORITY_ON_NEW", False):
-        db.add_tag(new_ids, "priority")
-    db.record_run(name, ok=True, item_count=len(items), new_count=len(new_ids))
-    return {"status": "ok", "items": len(items), "new": new_ids}
+        error = redact_secrets(f"{type(exc).__name__}: {exc}")[:500]
+        db.record_run(name, ok=False, error=error)
+        return {"status": "failed", "error": error}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -97,6 +106,10 @@ def main(argv: list[str] | None = None) -> int:
         for name in ADAPTERS:
             print(name)
         return 0
+
+    if args.source and args.source not in ADAPTERS:
+        print(f"unknown source {args.source!r}; try --list", file=sys.stderr)
+        return 2
 
     load_env()
     config = load_config()
@@ -117,9 +130,6 @@ def main(argv: list[str] | None = None) -> int:
         boundary_note = f"boundaries unavailable this run: {exc}"
 
     selected = {args.source: ADAPTERS[args.source]} if args.source else ADAPTERS
-    if args.source and args.source not in ADAPTERS:
-        print(f"unknown source {args.source!r}; try --list", file=sys.stderr)
-        return 2
 
     summary: dict[str, dict] = {}
     for name, module in selected.items():
@@ -127,7 +137,12 @@ def main(argv: list[str] | None = None) -> int:
             log.info("source %s disabled in config, skipping", name)
             continue
         log.info("running %s ...", name)
-        summary[name] = run_source(name, module, ctx, db)
+        try:
+            summary[name] = run_source(name, module, ctx, db)
+        except Exception as exc:   # belt-and-suspenders: even a failure while
+            log.error("recording %s failed: %s", name, exc)  # recording health
+            summary[name] = {"status": "failed",             # must not stop us
+                             "error": redact_secrets(str(exc))[:200]}
 
     reduced = load_reduced_boundaries(config["boundaries"])
     stats = sitegen.generate(db, config, watch_geojson, boundary_note, reduced)

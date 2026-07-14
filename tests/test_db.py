@@ -79,6 +79,58 @@ def test_add_tag(tmp_path):
     assert feed and set(feed[0]["tags"]) == {"a", "priority"}
 
 
+def test_priority_tag_survives_refetch(tmp_path):
+    """Regression: the UPDATE path used to overwrite tags with the adapter's
+    list, silently deleting the db-added priority tag after one run."""
+    db = fresh_db(tmp_path)
+    db.upsert_items([make_item(1, tags=["active"])])
+    db.add_tag(["testsrc:doc:1"], "priority")
+    db.upsert_items([make_item(1, tags=["active", "bears-ears"])])   # re-fetch
+    row = db.conn.execute("SELECT tags FROM items").fetchone()
+    import json
+    assert set(json.loads(row["tags"])) == {"active", "bears-ears", "priority"}
+
+
+def test_skip_never_fabricates_success(tmp_path):
+    """Regression: a key-missing skip used to be recorded as a full success,
+    setting last_success and zeroing the item count from the last real run."""
+    db = fresh_db(tmp_path)
+    db.record_run("testsrc", ok=True, item_count=42, new_count=1)
+    real_success = db.health()[0]["last_success"]
+    db.record_run("testsrc", ok=True, skipped=True, note="add KEY to enable")
+    row = db.health()[0]
+    assert row["last_success"] == real_success
+    assert row["item_count"] == 42
+    assert row["note"] == "add KEY to enable"
+
+
+def test_baseline_established_by_fetch_not_rows(tmp_path):
+    """Regression: baseline used to mean 'has stored rows', so a
+    legitimately-empty first fetch left the NEXT batch marked baseline and
+    (if undated) permanently hidden from the feed."""
+    db = fresh_db(tmp_path)
+    assert not db.baseline_established("testsrc")
+    db.record_run("testsrc", ok=True, skipped=True, note="no key")
+    assert not db.baseline_established("testsrc")   # skips don't count
+    db.record_run("testsrc", ok=True, item_count=0)  # real, legitimately empty
+    assert db.baseline_established("testsrc")
+    # the first real item after that empty fetch is activity, not baseline
+    db.upsert_items([make_item(1)], baseline_run=False)
+    feed = db.items_for_site(feed_days=90, max_items=100)
+    assert [i["id"] for i in feed] == ["testsrc:doc:1"]
+
+
+def test_priority_items_survive_the_feed_limit(tmp_path):
+    """Regression: ORDER BY date LIMIT n could silently cut old priority
+    items the query contract says always show."""
+    db = fresh_db(tmp_path)
+    items = [make_item(i, date="2099-01-01") for i in range(10)]
+    items.append(make_item(99, date="2000-01-01", tags=["priority"]))
+    db.upsert_items(items)
+    feed = db.items_for_site(feed_days=90, max_items=5)
+    assert "testsrc:doc:99" in [i["id"] for i in feed]
+
+
 def test_health_survives_failure_and_keeps_last_success(tmp_path):
     db = fresh_db(tmp_path)
     db.record_run("testsrc", ok=True, item_count=7, new_count=7)

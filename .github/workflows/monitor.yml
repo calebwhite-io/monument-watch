@@ -42,6 +42,10 @@ jobs:
 
       - name: Run all source adapters
         id: run
+        # explicit bash shell => pipefail, so a run.py crash fails this step
+        # instead of being masked by tee (silent dead monitoring is the worst
+        # failure mode this tool can have)
+        shell: bash
         env:
           CONGRESS_API_KEY: ${{ secrets.CONGRESS_API_KEY }}
           REGS_API_KEY: ${{ secrets.REGS_API_KEY }}

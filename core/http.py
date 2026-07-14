@@ -10,6 +10,7 @@ kill the user's monitoring):
 from __future__ import annotations
 
 import logging
+import re
 import time
 import urllib.parse
 import urllib.robotparser
@@ -62,6 +63,16 @@ class PoliteClient:
                 if cache:
                     self._cache[key] = resp
                 return resp
+            except requests.HTTPError as exc:
+                # 4xx (except 429) is deterministic — retrying just hammers
+                # the server with a request we know is rejected
+                status = exc.response.status_code if exc.response is not None else 0
+                if 400 <= status < 500 and status != 429:
+                    raise
+                last_exc = exc
+                if attempt < RETRIES:
+                    log.warning("%s %s failed (%s), retrying", method, url, exc)
+                    time.sleep(2 * (attempt + 1))
             except requests.RequestException as exc:
                 last_exc = exc
                 if attempt < RETRIES:
@@ -85,15 +96,22 @@ class PoliteClient:
         host = parts.netloc
         if host not in self._robots:
             rp = urllib.robotparser.RobotFileParser()
+            robots_text = ""
             try:
                 resp = self.get(f"{parts.scheme}://{host}/robots.txt", cache=True)
-                rp.parse(resp.text.splitlines())
+                robots_text = resp.text
+                rp.parse(robots_text.splitlines())
             except Exception:
                 rp.parse([])  # unreadable robots.txt -> allow, per convention
             self._robots[host] = rp
             agent = self.session.headers.get("User-Agent", "*").split("/")[0]
-            delay = rp.crawl_delay(agent) or rp.crawl_delay("*")
-            if delay:
-                self._crawl_delay[host] = float(delay)  # e.g. SITLA asks for 10s
+            # robotparser only honors Crawl-delay inside a User-agent group;
+            # sites like SITLA put it at the top of the file, so also read it
+            # directly and honor the largest value found
+            delays = [rp.crawl_delay(agent) or 0, rp.crawl_delay("*") or 0]
+            delays += [float(m) for m in
+                       re.findall(r"(?im)^\s*crawl-delay:\s*(\d+(?:\.\d+)?)", robots_text)]
+            if max(delays) > 0:
+                self._crawl_delay[host] = float(max(delays))
         agent = self.session.headers.get("User-Agent", "*").split("/")[0]
         return self._robots[host].can_fetch(agent, url)

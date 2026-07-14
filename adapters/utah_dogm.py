@@ -84,18 +84,16 @@ def _to_item(ctx: RunContext, r: dict) -> Item | None:
     except (TypeError, ValueError):
         pass
 
-    date = ""
-    first_prod = (r.get("FirstProdDate") or "").strip()
-    if first_prod and first_prod != "NULL":
-        date = first_prod[:10]
-
+    # deliberately undated: the CSV's only date (FirstProdDate) describes when
+    # production began, not when this status change happened — an old date
+    # would keep a genuinely new status event out of the feed's date window
     return Item(
         id=f"{SOURCE}:well:{api}:{status.lower() or 'none'}",
         source=SOURCE, category="leasing",
         title=f"{name} ({api}) — {status_label}",
         summary=summary,
         url="https://oilgas.ogm.utah.gov/oilgasweb/live-data-search/lds-well/well-lu.xhtml",
-        date=date,
+        date="",
         geometry=geometry,
         tags=sorted(set(tags)),
         raw={k: r.get(k) for k in ("WellName", "API", "Operator", "FieldName",

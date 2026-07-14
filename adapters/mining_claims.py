@@ -54,9 +54,13 @@ def _fetch_layer(ctx: RunContext, url: str, *, kind: str, category: str) -> list
         })
         page = data.get("features", [])
         features.extend(page)
-        if len(page) < PAGE_SIZE:
+        # ArcGIS may return fewer than the requested count even when more
+        # remain; only its own flag (or an empty page) means we're done
+        if not page or not (data.get("exceededTransferLimit")
+                            or (data.get("properties") or {}).get("exceededTransferLimit")
+                            or len(page) >= PAGE_SIZE):
             break
-        offset += PAGE_SIZE
+        offset += len(page)
     if not features:
         raise EmptyPayload(f"{kind} layer returned no features for the watch bbox")
 

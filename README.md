@@ -22,9 +22,15 @@ let a free GitHub Action run it every 6 hours and publish the page for you.
 You need [Python 3.11+](https://www.python.org/downloads/) installed
 (on Windows, tick "Add python.exe to PATH" during install).
 
+Get the code either way:
+
+- **No git?** On the repository's GitHub page click **Code → Download ZIP**,
+  unzip it anywhere, and open a terminal in that folder.
+- **With git:** `git clone <this-repository-url>` and `cd` into it.
+
+Then:
+
 ```bash
-git clone <this-repository-url>
-cd monument-watch
 pip install -r requirements.txt
 python run.py
 ```

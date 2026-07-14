@@ -7,6 +7,8 @@ client-side. A 6-hour cron easily keeps up with the update stream.
 """
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from core.context import RunContext
 from core.models import Item, monument_tags
 
@@ -23,6 +25,8 @@ def fetch(ctx: RunContext) -> list[Item]:
     cfg = ctx.source_config(SOURCE)
     monuments = ctx.config["watch"]["monuments"]
     keywords = [t.lower() for t in cfg["terms"]]
+    since = (datetime.now(timezone.utc)
+             - timedelta(days=cfg["lookback_days"])).strftime("%Y-%m-%dT00:00:00Z")
 
     items: dict[str, Item] = {}
     offset = 0
@@ -30,6 +34,7 @@ def fetch(ctx: RunContext) -> list[Item]:
         data = ctx.client.get_json(API, params={
             "api_key": key, "format": "json", "limit": PAGE_SIZE,
             "offset": offset, "sort": "updateDate desc",
+            "fromDateTime": since,
         })
         bills = data.get("bills", [])
         for b in bills:

@@ -1,17 +1,20 @@
 """News coverage: Google News RSS queries plus the watchdog orgs' own feeds.
 
-Google News RSS requires a browser-ish User-Agent and the hl/gl/ceid params
-(verified 2026-07-13 — returns empty XML without them). Org feeds are ordinary
-WordPress RSS; posts are kept only if they mention a watch keyword.
+Google News RSS requires an identifying User-Agent and the hl/gl/ceid params
+(verified 2026-07-13 — the bare curl default UA gets an empty response; the
+shared client's MonumentWatch UA works). Because a UA/IP block would otherwise
+look like a permanently quiet green source, zero entries across every Google
+query is treated as a failure. Org feeds are ordinary WordPress RSS; posts are
+kept only if they mention a watch keyword.
 """
 from __future__ import annotations
 
-import time
-from datetime import date, datetime, timedelta
+import calendar
+from datetime import date, datetime, timedelta, timezone
 
 import feedparser
 
-from core.context import RunContext
+from core.context import EmptyPayload, RunContext
 from core.models import Item, monument_tags, url_hash
 
 SOURCE = "news"
@@ -28,14 +31,21 @@ def fetch(ctx: RunContext) -> list[Item]:
 
     items: dict[str, Item] = {}
 
+    google_entries = 0
     for query in cfg["google_news_queries"]:
         resp = ctx.client.get(GOOGLE_RSS, params={
             "q": query, "hl": "en-US", "gl": "US", "ceid": "US:en",
         })
-        for entry in feedparser.parse(resp.text).entries:
+        entries = feedparser.parse(resp.text).entries
+        google_entries += len(entries)
+        for entry in entries:
             item = _entry_to_item(entry, monuments, cutoff, require_keywords=None)
             if item:
                 items.setdefault(item.id, item)
+    if google_entries == 0:
+        # these queries always match something; silence means we're blocked
+        # or the feed format changed — surface it instead of green-zero
+        raise EmptyPayload("Google News returned no entries for any query")
 
     for feed_url in cfg["org_feeds"]:
         if not ctx.client.allowed_by_robots(feed_url):
@@ -63,7 +73,10 @@ def _entry_to_item(entry, monuments: dict, cutoff: date,
 
     published = getattr(entry, "published_parsed", None)
     if published:
-        pub_date = datetime.fromtimestamp(time.mktime(published)).date()
+        # feedparser's struct_time is UTC; timegm keeps it UTC (mktime would
+        # reinterpret it in local time and shift dates near midnight)
+        pub_date = datetime.fromtimestamp(calendar.timegm(published),
+                                          tz=timezone.utc).date()
         if pub_date < cutoff:
             return None
         date_str = pub_date.isoformat()

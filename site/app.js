@@ -72,7 +72,7 @@
     var boundary = L.geoJSON(DATA.boundaries, {
       style: { color: "#22303c", weight: 2, fill: false, dashArray: "6 4" },
       onEachFeature: function (f, layer) {
-        layer.bindTooltip((f.properties && f.properties.NCA_NAME) || "Monument boundary");
+        layer.bindTooltip(escapeHtml((f.properties && f.properties.NCA_NAME) || "Monument boundary"));
       }
     }).addTo(map);
     map.fitBounds(boundary.getBounds());
@@ -87,6 +87,9 @@
   }
 
   function featureAge(f) {
+    // baseline records existed when monitoring began — never "new", even
+    // though their first_seen is the day the tool started
+    if (f.properties.baseline) return "old";
     var seen = f.properties.first_seen || "";
     var d30 = new Date(Date.now() - 30 * 864e5).toISOString();
     var d180 = new Date(Date.now() - 180 * 864e5).toISOString();
@@ -113,7 +116,7 @@
         layer.bindPopup(
           '<b>' + escapeHtml(p.title) + "</b><br>" +
           escapeHtml(p.category) + " · first seen " + (p.first_seen || "?").slice(0, 10) +
-          (p.url ? '<br><a href="' + p.url + '" target="_blank" rel="noopener">source record ↗</a>' : "")
+          (p.url ? '<br><a href="' + safeUrl(p.url) + '" target="_blank" rel="noopener">source record ↗</a>' : "")
         );
       }
     }).addTo(map);
@@ -145,7 +148,7 @@
   var mc = document.getElementById("manual-checks");
   ((DATA.meta && DATA.meta.manual_checks) || []).forEach(function (c) {
     var li = document.createElement("li");
-    li.innerHTML = '<a href="' + c.url + '" target="_blank" rel="noopener">' +
+    li.innerHTML = '<a href="' + safeUrl(c.url) + '" target="_blank" rel="noopener">' +
       escapeHtml(c.name) + " ↗</a><div class='what'>" + escapeHtml(c.what_to_check) + "</div>";
     mc.appendChild(li);
   });
@@ -225,7 +228,7 @@
       escapeHtml(CAT_LABELS[i.category] || i.category) + "</span>" +
       '<span class="muted">' + escapeHtml(i.source) + "</span>" +
       (i._new ? '<span class="new-flag">NEW</span>' : "") + "</div>" +
-      '<a class="title" href="' + (i.url || "#") + '" target="_blank" rel="noopener">' +
+      '<a class="title" href="' + safeUrl(i.url) + '" target="_blank" rel="noopener">' +
       escapeHtml(i.title) + "</a>" +
       (i.summary ? '<p class="summary">' + escapeHtml(i.summary) + "</p>" : "") +
       (tags ? '<div class="tags">' + tags + "</div>" : "");
@@ -253,6 +256,14 @@
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (ch) {
       return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch];
     });
+  }
+  function safeUrl(u) {
+    // item URLs come from fetched external content: escape them AND refuse
+    // any scheme other than http(s), else a poisoned record could inject
+    // javascript: links into this page
+    u = String(u == null ? "" : u);
+    if (!/^https?:\/\//i.test(u)) return "#";
+    return escapeHtml(u);
   }
 
   render();
