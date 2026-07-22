@@ -62,7 +62,18 @@ jobs:
           git config user.email "monument-watch-bot@users.noreply.github.com"
           git add data/ site/data/
           git diff --cached --quiet || git commit -m "monitor run: ${{ steps.run.outputs.new_items }} new items"
-          git push
+          # a push landing on main mid-run must not cost the cycle's data:
+          # rebase our commit onto it and retry. An unresolvable rebase (e.g.
+          # someone hand-pushed a conflicting monitor.db) still fails loudly.
+          for attempt in 1 2 3; do
+            if git pull --rebase && git push; then
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            sleep 5
+          done
+          echo "could not push after 3 attempts" >&2
+          exit 1
 
       - uses: actions/upload-pages-artifact@v3
         with:

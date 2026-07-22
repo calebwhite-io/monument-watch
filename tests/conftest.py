@@ -1,6 +1,7 @@
 """Shared test plumbing: a fake HTTP client that serves saved fixtures of
-real fetched data (captured 2026-07-13 during the build), and a small watch
-area surrounding the fixture mining claims."""
+real fetched data (captured 2026-07-13 during the build; congress_bills.json
+is synthetic — see test_congress), and a small watch area surrounding the
+fixture mining claims."""
 from __future__ import annotations
 
 import json

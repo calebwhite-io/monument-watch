@@ -1,0 +1,56 @@
+{
+  "bills": [
+    {
+      "congress": 119,
+      "latestAction": {
+        "actionDate": "2026-07-09",
+        "text": "Referred to the House Committee on Natural Resources."
+      },
+      "number": "5005",
+      "originChamber": "House",
+      "originChamberCode": "H",
+      "title": "To provide for a land exchange in San Juan County, Utah, adjacent to Bears Ears National Monument, and for other purposes.",
+      "type": "HR",
+      "updateDate": "2026-07-10",
+      "updateDateIncludingText": "2026-07-10T08:15:44Z",
+      "url": "https://api.congress.gov/v3/bill/119/hr/5005?format=json"
+    },
+    {
+      "congress": 119,
+      "latestAction": {
+        "actionDate": "2026-07-07",
+        "text": "Read twice and referred to the Committee on Energy and Natural Resources."
+      },
+      "number": "2200",
+      "originChamber": "Senate",
+      "originChamberCode": "S",
+      "title": "Antiquities Act Reform Act of 2026",
+      "type": "S",
+      "updateDate": "2026-07-08",
+      "updateDateIncludingText": "2026-07-08T09:02:11Z",
+      "url": "https://api.congress.gov/v3/bill/119/s/2200?format=json"
+    },
+    {
+      "congress": 119,
+      "latestAction": {
+        "actionDate": "2026-07-11",
+        "text": "Placed on the Union Calendar, Calendar No. 210."
+      },
+      "number": "4400",
+      "originChamber": "House",
+      "originChamberCode": "H",
+      "title": "Departments of Commerce and Justice Appropriations Act, 2027",
+      "type": "HR",
+      "updateDate": "2026-07-11",
+      "updateDateIncludingText": "2026-07-11T17:45:02Z",
+      "url": "https://api.congress.gov/v3/bill/119/hr/4400?format=json"
+    }
+  ],
+  "pagination": {
+    "count": 3
+  },
+  "request": {
+    "contentType": "application/json",
+    "format": "json"
+  }
+}

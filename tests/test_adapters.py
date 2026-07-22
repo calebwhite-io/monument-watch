@@ -1,17 +1,18 @@
 """Each adapter's parser against saved fixtures of real fetched data
-(captured live 2026-07-13). Every test also proves ID determinism by parsing
-twice and comparing."""
+(captured live 2026-07-13) — except congress_bills.json, which is synthetic
+(see test_congress). Every test also proves ID determinism by parsing twice
+and comparing."""
 from __future__ import annotations
 
 import os
 
 import pytest
 
-from adapters import (blm_policy, courtlistener, eplanning, federal_register,
-                      lease_sales, mining_claims, news, regulations_gov, sitla,
-                      utah_dogm)
+from adapters import (blm_policy, congress, courtlistener, eplanning,
+                      federal_register, lease_sales, mining_claims, news,
+                      regulations_gov, sitla, utah_dogm)
 from adapters.congress import _chamber_slug, _keyword_in
-from tests.conftest import FIXTURES, make_ctx
+from tests.conftest import FIXTURES, FakeClient, make_ctx
 
 
 def ids_twice(module, ctx_factory):
@@ -70,6 +71,24 @@ def test_congress_keyword_matching():
     assert _chamber_slug("s") == "senate-bill"
 
 
+def test_congress(config, monkeypatch):
+    """Parser against a synthetic fixture in the documented v3 /bill response
+    shape (a live capture still needs a real API key — the shared DEMO_KEY was
+    rate-limited at build time). Pins ID format, keyword filtering, category,
+    URL construction, and the action-date choice."""
+    monkeypatch.setenv("CONGRESS_API_KEY", "TEST_KEY")
+    def ctx():
+        return make_ctx(config, {"api.congress.gov": "congress_bills.json"})
+    ids = ids_twice(congress, ctx)
+    assert ids == ["congress:bill:119-hr-5005", "congress:bill:119-s-2200"]
+    items = congress.fetch(ctx())
+    assert all(i.category == "congress" for i in items)
+    bears = next(i for i in items if "hr-5005" in i.id)
+    assert bears.url == "https://www.congress.gov/bill/119th-congress/house-bill/5005"
+    assert bears.date == "2026-07-09"
+    assert "bears-ears" in bears.tags
+
+
 def test_regulations_gov(config, monkeypatch):
     monkeypatch.setenv("REGS_API_KEY", "TEST_KEY")
     def ctx():
@@ -96,6 +115,121 @@ def test_news(config):
     items = news.fetch(ctx())
     tagged = [i for i in items if "bears-ears" in i.tags]
     assert tagged, "Google News fixture is a Bears Ears query; tags expected"
+
+
+NEWS_ROUTES = {"news.google.com": "google_news.xml", "suwa.org": "org_feed.xml",
+               "grandcanyontrust.org": "org_feed.xml",
+               "bearsearscoalition.org": "org_feed.xml"}
+EMPTY_RSS = b"<?xml version='1.0'?><rss version='2.0'><channel><title>q</title></channel></rss>"
+
+
+def test_news_partial_google_failure_keeps_going_but_is_reported(config):
+    """Regression: one throttled Google query used to abort the adapter; each
+    query is independent and the others' items must survive. A persistently
+    failing query must still be visible on the health panel, not only in a
+    cron log nobody reads."""
+    class FirstGoogleCallFails(FakeClient):
+        def get(self, url, **kw):
+            if "news.google.com" in url and not getattr(self, "_failed", False):
+                self._failed = True
+                raise ConnectionError("throttled")
+            return super().get(url, **kw)
+
+    ctx = make_ctx(config, NEWS_ROUTES)
+    ctx.client = FirstGoogleCallFails(NEWS_ROUTES)
+    items = news.fetch(ctx)
+    assert items and all(i.id.startswith("news:article:") for i in items)
+    assert "1/3 Google News queries failed" in ctx.warnings["news"]
+
+
+def test_news_single_org_feed_outage_is_reported(config):
+    """Org feeds are disjoint hosts with shallow RSS windows: one feed dying
+    permanently (DNS change, moved URL) must show on the health panel — the
+    note names the count so the operator can notice, and it self-clears on
+    the next fully-healthy run."""
+    class SuwaDown(FakeClient):
+        def get(self, url, **kw):
+            if "suwa.org" in url:
+                raise ConnectionError("dns failure")
+            return super().get(url, **kw)
+
+    ctx = make_ctx(config, NEWS_ROUTES)
+    ctx.client = SuwaDown(NEWS_ROUTES)
+    items = news.fetch(ctx)
+    assert items
+    assert "1/3 org feeds failed" in ctx.warnings["news"]
+
+
+def test_news_org_outage_keeps_items_and_degrades(config):
+    """Regression: an org feed's outage used to crash the whole adapter and
+    discard the other hosts' items; total org failure must also be visible on
+    the health panel (yellow), not a silent green."""
+    class OrgHostsDown(FakeClient):
+        def get(self, url, **kw):
+            if "news.google.com" not in url:
+                raise ConnectionError("org host unreachable")
+            return super().get(url, **kw)
+
+    ctx = make_ctx(config, NEWS_ROUTES)
+    ctx.client = OrgHostsDown(NEWS_ROUTES)
+    items = news.fetch(ctx)
+    assert items and all(i.id.startswith("news:article:") for i in items)
+    assert "org feeds failed" in ctx.warnings["news"]
+
+
+def test_news_google_block_keeps_org_items_and_degrades(config):
+    """Regression: an all-queries Google block used to abort before the org
+    feeds were fetched — during a multi-day block their shallow RSS windows
+    scrolled away unrecorded. Org items must be kept, block shown as yellow."""
+    class GoogleBlocked(FakeClient):
+        def get(self, url, **kw):
+            if "news.google.com" in url:
+                raise ConnectionError("blocked")
+            return super().get(url, **kw)
+
+    ctx = make_ctx(config, NEWS_ROUTES)
+    ctx.client = GoogleBlocked(NEWS_ROUTES)
+    items = news.fetch(ctx)
+    assert items and all(i.id.startswith("news:article:") for i in items)
+    assert "Google News" in ctx.warnings["news"]
+
+
+def test_news_total_outage_is_a_failure(config):
+    """When nothing at all was salvaged, the real exception must surface (red
+    on the health panel), never a quiet empty result."""
+    class AllDown(FakeClient):
+        def get(self, url, **kw):
+            raise ConnectionError("everything unreachable")
+
+    ctx = make_ctx(config, NEWS_ROUTES)
+    ctx.client = AllDown(NEWS_ROUTES)
+    with pytest.raises(ConnectionError):
+        news.fetch(ctx)
+
+
+def test_news_quiet_google_still_detected(config):
+    """The docstring's core concern: a UA/IP block that answers with valid but
+    empty feeds must not look green. With org items salvaged it degrades to
+    yellow; with nothing salvaged it is an EmptyPayload failure."""
+    from core.context import EmptyPayload
+    routes = dict(NEWS_ROUTES, **{"news.google.com": EMPTY_RSS})
+    ctx = make_ctx(config, routes)
+    items = news.fetch(ctx)
+    assert items                                     # org items kept
+    assert "no usable entries" in ctx.warnings["news"]
+    config["sources"]["news"]["org_feeds"] = []      # nothing to salvage
+    with pytest.raises(EmptyPayload):
+        news.fetch(make_ctx(config, routes))
+
+
+def test_news_org_only_config_works(config):
+    """An operator may empty google_news_queries (e.g. Google blocks their
+    region); org-feed-only monitoring must still function, quietly green."""
+    config["sources"]["news"]["google_news_queries"] = []
+    ctx = make_ctx(config, NEWS_ROUTES)
+    items = news.fetch(ctx)
+    assert items and all(i.id.startswith("news:article:") for i in items)
+    assert "news" not in ctx.warnings
 
 
 def test_eplanning(config):

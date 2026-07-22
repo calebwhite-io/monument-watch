@@ -21,15 +21,18 @@ GEOMETRY_SOURCES = ["mining_claims", "utah_dogm"]
 
 def health_status(row: dict, stale_after_days: int) -> str:
     """green = last attempt succeeded with data; yellow = empty payload
-    (possible format change), stale data, or waiting on an API key; red =
-    last attempt errored outright. Stale/failed sources keep showing their
-    last good data date so old information is never silently presented as
-    current."""
+    (possible format change), a degraded run (part of a multi-feed source
+    failed — the note says which), stale data, or waiting on an API key;
+    red = last attempt errored outright. Stale/failed sources keep showing
+    their last good data date so old information is never silently presented
+    as current."""
     note = (row.get("note") or "").lower()
     if "to enable" in note or "api key" in note or "api_key" in note:
         return "yellow"   # waiting on a key: not broken, but not fetching either
     if "format change" in note:
         return "yellow"   # answered 200 but empty — per spec, yellow not red
+    if note.startswith("degraded"):
+        return "yellow"   # run stored items, but part of the source failed
     if row["last_error"]:
         return "red"
     if not row["last_success"]:

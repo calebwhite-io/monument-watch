@@ -76,48 +76,75 @@ class Database:
 
     def _migrate(self) -> None:
         """Add columns introduced after a database was first created
-        (CREATE TABLE IF NOT EXISTS never alters existing tables)."""
+        (CREATE TABLE IF NOT EXISTS never alters existing tables). The ALTER
+        and its backfill commit together — SQLite DDL is transactional, and a
+        crash between them would otherwise skip the backfill forever (the
+        retried ALTER raises 'duplicate column' and bails out)."""
         try:
+            self.conn.execute("BEGIN")
             self.conn.execute("ALTER TABLE source_health ADD COLUMN"
                               " baseline_established INTEGER NOT NULL DEFAULT 0")
         except sqlite3.OperationalError:
-            pass  # column already exists
-        else:
-            # freshly migrated: under the old semantics a source with stored
-            # items had its baseline; carry that over
-            self.conn.execute(
-                "UPDATE source_health SET baseline_established = 1"
-                " WHERE source IN (SELECT DISTINCT source FROM items)")
+            self.conn.rollback()  # column already exists
+            return
+        # freshly migrated: under the old semantics a source with stored
+        # items had its baseline; carry that over
+        self.conn.execute(
+            "UPDATE source_health SET baseline_established = 1"
+            " WHERE source IN (SELECT DISTINCT source FROM items)")
         self.conn.commit()
 
-    def upsert_items(self, items: list[Item], *, baseline_run: bool = False) -> list[str]:
+    def upsert_items(self, items: list[Item], *, baseline_run: bool = False,
+                     tag_new: str | None = None) -> list[str]:
         """Insert unseen items (they become `new`); refresh mutable fields on
-        known items without touching first_seen. Returns the new IDs."""
+        known items without touching first_seen. Returns the new IDs.
+        `tag_new` is stored on inserted items in the same transaction — a
+        separate tagging write could be lost if the run died in between,
+        silently un-prioritizing the alert."""
         now = utcnow()
         new_ids: list[str] = []
         cur = self.conn.cursor()
-        for it in items:
-            row = cur.execute("SELECT tags FROM items WHERE id = ?", (it.id,)).fetchone()
-            geometry = json.dumps(it.geometry) if it.geometry else None
-            raw = json.dumps(it.raw) if it.raw is not None else None
-            if row is None:
-                cur.execute(
-                    "INSERT INTO items (id, source, category, title, summary, url,"
-                    " date, first_seen, geometry, tags, raw, baseline)"
-                    " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (it.id, it.source, it.category, it.title, it.summary, it.url,
-                     it.date, now, geometry, json.dumps(it.tags), raw, int(baseline_run)))
-                new_ids.append(it.id)
-            else:
-                # adapter tags replace stored ones, but tags this database
-                # added itself (priority) must survive re-fetches of the item
-                kept = set(json.loads(row["tags"])) & DB_MANAGED_TAGS
-                tags = json.dumps(sorted(set(it.tags) | kept))
-                cur.execute(
-                    "UPDATE items SET title = ?, summary = ?, url = ?, date = ?,"
-                    " geometry = ?, tags = ?, raw = ? WHERE id = ?",
-                    (it.title, it.summary, it.url, it.date, geometry, tags, raw, it.id))
-        self.conn.commit()
+        # All-or-nothing, including the commit itself: a failure anywhere must
+        # roll back the items already staged, or the caller's next commit
+        # (record_run after the failure) would persist them without their ids
+        # ever being returned as new — permanently suppressing their alert.
+        try:
+            for it in items:
+                row = cur.execute("SELECT tags FROM items WHERE id = ?", (it.id,)).fetchone()
+                geometry = json.dumps(it.geometry) if it.geometry else None
+                raw = json.dumps(it.raw) if it.raw is not None else None
+                if row is None:
+                    tags = set(it.tags) | ({tag_new} if tag_new else set())
+                    cur.execute(
+                        "INSERT INTO items (id, source, category, title, summary, url,"
+                        " date, first_seen, geometry, tags, raw, baseline)"
+                        " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (it.id, it.source, it.category, it.title, it.summary, it.url,
+                         it.date, now, geometry, json.dumps(sorted(tags)), raw,
+                         int(baseline_run)))
+                    new_ids.append(it.id)
+                else:
+                    # adapter tags replace stored ones, but tags this database
+                    # added itself (priority) must survive re-fetches of the item
+                    kept = set(json.loads(row["tags"])) & DB_MANAGED_TAGS
+                    tags = json.dumps(sorted(set(it.tags) | kept))
+                    cur.execute(
+                        "UPDATE items SET title = ?, summary = ?, url = ?, date = ?,"
+                        " geometry = ?, tags = ?, raw = ? WHERE id = ?",
+                        (it.title, it.summary, it.url, it.date, geometry, tags, raw, it.id))
+            if baseline_run and items:
+                # the baseline flag must commit WITH the baseline items: were
+                # it written later (record_run) and that write failed, the
+                # next run would re-baseline and silently absorb real activity
+                for src in {it.source for it in items}:
+                    cur.execute(
+                        "INSERT INTO source_health (source, baseline_established)"
+                        " VALUES (?, 1) ON CONFLICT(source)"
+                        " DO UPDATE SET baseline_established = 1", (src,))
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
         return new_ids
 
     def baseline_established(self, source: str) -> bool:
@@ -131,43 +158,58 @@ class Database:
 
     def add_tag(self, ids: list[str], tag: str) -> None:
         cur = self.conn.cursor()
-        for item_id in ids:
-            row = cur.execute("SELECT tags FROM items WHERE id = ?", (item_id,)).fetchone()
-            if row:
-                tags = json.loads(row["tags"])
-                if tag not in tags:
-                    tags.append(tag)
-                    cur.execute("UPDATE items SET tags = ? WHERE id = ?",
-                                (json.dumps(sorted(tags)), item_id))
-        self.conn.commit()
+        try:
+            for item_id in ids:
+                row = cur.execute("SELECT tags FROM items WHERE id = ?", (item_id,)).fetchone()
+                if row:
+                    tags = json.loads(row["tags"])
+                    if tag not in tags:
+                        tags.append(tag)
+                        cur.execute("UPDATE items SET tags = ? WHERE id = ?",
+                                    (json.dumps(sorted(tags)), item_id))
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()   # never leave a half-tagged batch staged
+            raise
 
     def record_run(self, source: str, *, ok: bool, item_count: int = 0,
                    new_count: int = 0, error: str | None = None,
                    note: str | None = None, skipped: bool = False) -> None:
         now = utcnow()
-        cur = self.conn.cursor()
-        cur.execute("INSERT INTO run_log (ts, source, ok, item_count, new_count, error)"
-                    " VALUES (?, ?, ?, ?, ?, ?)",
-                    (now, source, int(ok), item_count, new_count,
-                     error if not skipped else f"skipped: {note}"))
-        cur.execute("INSERT INTO source_health (source) VALUES (?)"
-                    " ON CONFLICT(source) DO NOTHING", (source,))
+        # the append-only log keeps whatever context the run had: the error,
+        # a skip reason, or a degraded-run note (source_health.note is
+        # overwritten by the next run, so this is the only durable trail)
+        log_text = error
         if skipped:
-            # a skip is not a fetch: never fabricate last_success or clobber
-            # the item count from the last real run
-            cur.execute("UPDATE source_health SET last_attempt = ?, note = ?"
-                        " WHERE source = ?", (now, note, source))
-        elif ok:
-            cur.execute("UPDATE source_health SET last_attempt = ?, last_success = ?,"
-                        " last_error = NULL, item_count = ?, new_count = ?, note = ?,"
-                        " baseline_established = 1 WHERE source = ?",
-                        (now, now, item_count, new_count, note, source))
-        else:
-            # keep last_success and item_count from the last good run visible
-            cur.execute("UPDATE source_health SET last_attempt = ?, last_error = ?,"
-                        " new_count = 0, note = ? WHERE source = ?",
-                        (now, error, note, source))
-        self.conn.commit()
+            log_text = f"skipped: {note}"
+        elif ok and note:
+            log_text = note
+        cur = self.conn.cursor()
+        try:
+            cur.execute("INSERT INTO run_log (ts, source, ok, item_count, new_count, error)"
+                        " VALUES (?, ?, ?, ?, ?, ?)",
+                        (now, source, int(ok), item_count, new_count, log_text))
+            cur.execute("INSERT INTO source_health (source) VALUES (?)"
+                        " ON CONFLICT(source) DO NOTHING", (source,))
+            if skipped:
+                # a skip is not a fetch: never fabricate last_success or clobber
+                # the item count from the last real run
+                cur.execute("UPDATE source_health SET last_attempt = ?, note = ?"
+                            " WHERE source = ?", (now, note, source))
+            elif ok:
+                cur.execute("UPDATE source_health SET last_attempt = ?, last_success = ?,"
+                            " last_error = NULL, item_count = ?, new_count = ?, note = ?,"
+                            " baseline_established = 1 WHERE source = ?",
+                            (now, now, item_count, new_count, note, source))
+            else:
+                # keep last_success and item_count from the last good run visible
+                cur.execute("UPDATE source_health SET last_attempt = ?, last_error = ?,"
+                            " new_count = 0, note = ? WHERE source = ?",
+                            (now, error, note, source))
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()   # a torn health record is worse than none
+            raise
 
     def health(self) -> list[dict]:
         rows = self.conn.execute("SELECT * FROM source_health ORDER BY source").fetchall()

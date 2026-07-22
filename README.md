@@ -116,9 +116,10 @@ county mining-claim filings, so nothing critical is automation-blind.
   `config.yaml` — it will overlay in green with no code change.
 - **Feed** — newest first, filterable by category, monument, or text.
 - **Source health** — green: fetched fine. Yellow: waiting on an API key, ran
-  but empty, or data is stale (older than 3 days). Red: last fetch failed;
-  the error is shown and the last good data stays on the page with its date —
-  stale data is never silently presented as current.
+  but empty, partially degraded (part of a multi-feed source failed — the
+  note says which), or data is stale (older than 3 days). Red: last fetch
+  failed; the error is shown and the last good data stays on the page with
+  its date — stale data is never silently presented as current.
 
 ## Tuning (no code needed)
 

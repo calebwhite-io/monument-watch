@@ -1,6 +1,10 @@
 """Change detection: ID stability, new-item flagging, baseline semantics."""
 from __future__ import annotations
 
+import sqlite3
+
+import pytest
+
 from core.db import Database
 from core.models import Item
 
@@ -129,6 +133,102 @@ def test_priority_items_survive_the_feed_limit(tmp_path):
     db.upsert_items(items)
     feed = db.items_for_site(feed_days=90, max_items=5)
     assert "testsrc:doc:99" in [i["id"] for i in feed]
+
+
+def test_failed_batch_rolls_back_entirely(tmp_path):
+    """Regression: a mid-batch failure used to leave the earlier INSERTs
+    pending on the shared connection, and record_run's next commit persisted
+    them without their ids ever having been returned as new — permanently
+    suppressing their alert."""
+    db = fresh_db(tmp_path)
+    bad = [make_item(1), make_item(2, raw={"unserializable": object()})]
+    with pytest.raises(TypeError):
+        db.upsert_items(bad)
+    db.record_run("testsrc", ok=False, error="boom")   # commits the connection
+    assert db.conn.execute("SELECT COUNT(*) FROM items").fetchone()[0] == 0
+    # a clean retry must still flag every item in the batch as new
+    assert db.upsert_items([make_item(1), make_item(2)]) == \
+        ["testsrc:doc:1", "testsrc:doc:2"]
+
+
+def test_baseline_flag_commits_with_the_baseline_items(tmp_path):
+    """Regression: baseline_established was only written later by record_run;
+    a failure between the two commits made the NEXT run a baseline run too,
+    silently absorbing that cycle's genuinely-new items."""
+    db = fresh_db(tmp_path)
+    db.upsert_items([make_item(1)], baseline_run=True)
+    # simulated crash: record_run never happens — the flag must already be set
+    assert db.baseline_established("testsrc")
+
+
+def test_migration_backfills_baseline(tmp_path):
+    """An old-schema database (no baseline_established column) gains it on
+    open, with sources that already have items counted as baselined."""
+    path = tmp_path / "old.db"
+    conn = sqlite3.connect(path)
+    conn.executescript("""
+        CREATE TABLE items (
+            id TEXT PRIMARY KEY, source TEXT NOT NULL, category TEXT NOT NULL,
+            title TEXT NOT NULL, summary TEXT NOT NULL DEFAULT '',
+            url TEXT NOT NULL DEFAULT '', date TEXT NOT NULL DEFAULT '',
+            first_seen TEXT NOT NULL, geometry TEXT,
+            tags TEXT NOT NULL DEFAULT '[]', raw TEXT,
+            baseline INTEGER NOT NULL DEFAULT 0);
+        CREATE TABLE source_health (
+            source TEXT PRIMARY KEY, last_attempt TEXT, last_success TEXT,
+            last_error TEXT, item_count INTEGER NOT NULL DEFAULT 0,
+            new_count INTEGER NOT NULL DEFAULT 0, note TEXT);
+        CREATE TABLE run_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT, ts TEXT NOT NULL,
+            source TEXT NOT NULL, ok INTEGER NOT NULL,
+            item_count INTEGER NOT NULL DEFAULT 0,
+            new_count INTEGER NOT NULL DEFAULT 0, error TEXT);
+        INSERT INTO items (id, source, category, title, first_seen)
+            VALUES ('oldsrc:doc:1', 'oldsrc', 'news', 't', '2026-01-01T00:00:00Z');
+        INSERT INTO source_health (source) VALUES ('oldsrc');
+    """)
+    conn.close()
+    db = Database(path)
+    assert db.baseline_established("oldsrc")
+    assert not db.baseline_established("neverseen")
+
+
+def test_failed_commit_also_rolls_back(tmp_path):
+    """Regression: commit() sat outside the rollback guard, so a 'database is
+    locked' at commit time left the batch staged for the next record_run
+    commit to silently persist — with the ids never reported as new."""
+    db = fresh_db(tmp_path)
+    db.conn.execute("PRAGMA busy_timeout = 50")
+    blocker = sqlite3.connect(tmp_path / "test.db")
+    blocker.isolation_level = None
+    try:
+        blocker.execute("BEGIN")
+        blocker.execute("SELECT COUNT(*) FROM items").fetchone()  # shared lock
+        with pytest.raises(sqlite3.OperationalError):
+            db.upsert_items([make_item(1)])   # staging works; COMMIT is blocked
+    finally:
+        blocker.execute("ROLLBACK")
+        blocker.close()
+    db.record_run("testsrc", ok=False, error="database is locked")
+    assert db.conn.execute("SELECT COUNT(*) FROM items").fetchone()[0] == 0
+    # the retry must still flag the item as new
+    assert db.upsert_items([make_item(1)]) == ["testsrc:doc:1"]
+
+
+def test_tag_new_applied_atomically_only_to_inserts(tmp_path):
+    """Priority tagging rides inside the insert transaction (a separate write
+    after the commit could be lost mid-run); items that already exist must
+    not pick the tag up on re-fetch."""
+    import json
+    db = fresh_db(tmp_path)
+    db.upsert_items([make_item(1, tags=["a"])])
+    new = db.upsert_items([make_item(1, tags=["a"]), make_item(2, tags=["b"])],
+                          tag_new="priority")
+    assert new == ["testsrc:doc:2"]
+    rows = {r["id"]: set(json.loads(r["tags"]))
+            for r in db.conn.execute("SELECT id, tags FROM items")}
+    assert rows["testsrc:doc:1"] == {"a"}
+    assert rows["testsrc:doc:2"] == {"b", "priority"}
 
 
 def test_health_survives_failure_and_keeps_last_success(tmp_path):

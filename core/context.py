@@ -27,6 +27,9 @@ class RunContext:
     client: PoliteClient
     watch_area: object | None = None   # core.geo.WatchArea, None if boundaries failed
     extras: dict = field(default_factory=dict)
+    # source name -> degradation note: the run stored items, but part of the
+    # source failed and the health panel must show it (yellow, not green).
+    warnings: dict = field(default_factory=dict)
 
     def source_config(self, name: str) -> dict:
         return self.config["sources"][name]

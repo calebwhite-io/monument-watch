@@ -67,14 +67,23 @@ def run_source(name: str, module, ctx: RunContext, db: Database) -> dict:
     baseline = db.baseline_established(name)
     try:
         items = module.fetch(ctx)
+        # an adapter that salvaged a partial outage reports it here; the note
+        # turns the health row yellow instead of a falsely-clean green. It can
+        # embed exception text (full URLs), so it gets the same scrub-and-cap
+        # treatment as errors — the note is published on the dashboard too.
+        warning = ctx.warnings.pop(name, None) if ctx is not None else None
+        if warning:
+            warning = redact_secrets(warning)[:500]
         if not items and not zero_ok:
             raise EmptyPayload("0 items — possible format change")
-        new_ids = db.upsert_items(items, baseline_run=not baseline)
         # e.g. a mining-claim case number never seen before is the core
-        # signal — tag it priority, but only once a baseline exists.
-        if new_ids and baseline and getattr(module, "PRIORITY_ON_NEW", False):
-            db.add_tag(new_ids, "priority")
-        db.record_run(name, ok=True, item_count=len(items), new_count=len(new_ids))
+        # signal — tag it priority, but only once a baseline exists. Tagged
+        # inside the insert transaction: a separate write could be lost.
+        priority = baseline and getattr(module, "PRIORITY_ON_NEW", False)
+        new_ids = db.upsert_items(items, baseline_run=not baseline,
+                                  tag_new="priority" if priority else None)
+        db.record_run(name, ok=True, item_count=len(items), new_count=len(new_ids),
+                      note=warning)
         return {"status": "ok", "items": len(items), "new": new_ids}
     except SkipSource as skip:
         db.record_run(name, ok=True, skipped=True, note=skip.note)
